@@ -1,0 +1,8 @@
+name = "drinkcheck"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+
+# Set these via `wrangler secret put`
+# DISCORD_WEBHOOK_URL
+# LINE_CHANNEL_TOKEN
+# LINE_TARGET_ID
