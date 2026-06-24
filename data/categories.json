@@ -1,0 +1,6 @@
+[
+  { "id": "barrel", "name": "ビール樽、補充ボトル等", "order": 0 },
+  { "id": "spirits", "name": "スピリッツ、リキュール", "order": 1 },
+  { "id": "server", "name": "ドリンクサーバー", "order": 2 },
+  { "id": "buy", "name": "買い出し、個別発注", "order": 3 }
+]
