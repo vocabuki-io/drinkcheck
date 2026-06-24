@@ -190,7 +190,11 @@
     "categoryId": "server",
     "supplier": "suntory",
     "parLevel": 5,
-    "order": 8
+    "order": 8,
+    "units": [
+      "本",
+      "箱"
+    ]
   },
   {
     "id": "water",
