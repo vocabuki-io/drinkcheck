@@ -34,27 +34,28 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans','Noto Sans JP'
 /* Cards */
 .cards{padding:0 16px;display:flex;flex-direction:column;gap:10px}
 .category-label{font-size:12px;font-weight:700;color:var(--text-sub);padding:14px 4px 2px;letter-spacing:.5px}
-.card{background:var(--card);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow);display:flex;gap:14px}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);display:flex;overflow:hidden}
 .card-photo{
-  width:56px;height:76px;border-radius:var(--radius-sm);flex-shrink:0;
+  width:60px;flex-shrink:0;align-self:stretch;
   display:flex;align-items:center;justify-content:center;
   font-size:20px;font-weight:800;color:#fff;
   background-size:cover;background-position:center;
 }
-.card-body{flex:1;min-width:0}
-.card-name{font-size:15px;font-weight:700;margin-bottom:10px}
-.card-counters{display:flex;flex-direction:column;gap:8px}
-.counter-row{display:flex;align-items:center;gap:8px}
-.counter-label{font-size:12px;font-weight:600;color:var(--text-sub);width:44px;flex-shrink:0}
+.card-body{flex:1;min-width:0;padding:12px;display:flex;align-items:center;gap:10px}
+.card-name{flex:1;font-size:15px;font-weight:700;min-width:0}
+.card-counters{display:flex;flex-direction:column;gap:6px;flex-shrink:0}
+.counter-row{display:flex;align-items:center;gap:4px}
+.counter-label{font-size:11px;font-weight:600;color:var(--text-sub);width:32px;flex-shrink:0;text-align:right}
 .counter-controls{display:flex;align-items:center;background:var(--btn-bg);border-radius:12px;overflow:hidden}
 .counter-btn{
-  width:48px;height:44px;border:none;background:transparent;
+  width:44px;height:42px;border:none;background:transparent;
   font-size:22px;font-weight:600;color:var(--text);
   cursor:pointer;display:flex;align-items:center;justify-content:center;
   user-select:none;
 }
 .counter-btn:active{background:var(--btn-active)}
-.counter-value{width:36px;text-align:center;font-size:20px;font-weight:800;font-variant-numeric:tabular-nums}
+.counter-value{width:32px;text-align:center;font-size:20px;font-weight:800;font-variant-numeric:tabular-nums;cursor:pointer}
+.counter-input{width:44px;text-align:center;font-size:20px;font-weight:800;font-variant-numeric:tabular-nums;border:none;border-bottom:2px solid var(--tab-active);background:transparent;color:var(--text);padding:0;font-family:inherit;outline:none}
 
 /* Memo */
 .memo-section{padding:16px}
@@ -182,10 +183,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans','Noto Sans JP'
 </div>
 
 <!-- MODALS -->
-<div class="modal-overlay" id="submitModal"><div class="modal-sheet">
+<div class="modal-overlay modal-center" id="submitModal"><div class="modal-sheet">
   <div class="modal-title" id="smTitle"></div>
   <div class="modal-field"><div class="modal-field-label" id="smLblS"></div><input class="modal-input" id="smStaff" autocomplete="off"></div>
-  <div class="modal-field"><div class="modal-field-label" id="smLblC"></div><input class="modal-input" id="smChecker" autocomplete="off"></div>
   <div class="modal-buttons"><button class="modal-btn cancel" id="smCancel"></button><button class="modal-btn confirm" id="smConfirm"></button></div>
 </div></div>
 
@@ -224,7 +224,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans','Noto Sans JP'
 <script>
 /* ============================================================ */
 var REPO = 'vocabuki-io/drinkcheck';
-var WORKER_URL = 'https://drinkcheck.dragxonx3.workers.dev';
 var GH_API = 'https://api.github.com/repos/' + REPO + '/contents/';
 var PAGES_BASE = ''; // relative path (same origin on GitHub Pages)
 var COLORS = ['#E8A87C','#85CDCA','#D5A6BD','#B4C6E7','#C9B1FF','#F7C59F','#A2D5C6','#FFB7B2','#B5EAD7','#E2C2C6','#C7CEEA','#FFDAC1'];
@@ -324,7 +323,7 @@ function compressImage(file,cb){
    ============================================================ */
 function renderCheckView(){
   $('checkView').querySelector('.page-title').textContent='\u30C9\u30EA\u30F3\u30AF\u30C1\u30A7\u30C3\u30AF';
-  $('submitBtn').textContent='\u63D0\u51FA\u3059\u308B';
+  $('submitBtn').textContent='\u30B3\u30D4\u30FC';
   $('memo').setAttribute('placeholder','\u8CB7\u3044\u51FA\u3057\u4F9D\u983C\u3084\u9023\u7D61\u4E8B\u9805');
   renderTabs();renderCards();
 }
@@ -345,14 +344,18 @@ function renderCards(){
     ci.forEach(function(item){
       if(!values[item.id])values[item.id]={opened:0,unopened:0};
       var v=values[item.id];
-      var u1=(item.units&&item.units[0])?item.units[0]:'\u958B\u5C01';
-      var u2=(item.units&&item.units[1])?item.units[1]:'\u672A\u958B\u5C01';
+      var hasCustom=item.units&&item.units.length>=2;
       var ps=item.image?'background-image:url('+item.image+')':'background:'+itemColor(item);
       var ini=item.image?'':item.name.charAt(0);
-      h+='<div class="card"><div class="card-photo" style="'+ps+'">'+ini+'</div><div class="card-body">'
-        +'<div class="card-name">'+item.name+'</div><div class="card-counters">'
-        +cRow(item.id,'opened',u1,v.opened)+cRow(item.id,'unopened',u2,v.unopened)
-        +'</div></div></div>';
+      var rows='';
+      if(hasCustom){
+        rows=cRow(item.id,'opened',item.units[0],v.opened)+cRow(item.id,'unopened',item.units[1],v.unopened);
+      }else{
+        rows=cRow(item.id,'unopened','',v.unopened);
+      }
+      h+='<div class="card"><div class="card-photo" style="'+ps+'">'+ini+'</div>'
+        +'<div class="card-body"><div class="card-name">'+item.name+'</div>'
+        +'<div class="card-counters">'+rows+'</div></div></div>';
     });
   });
   $('cards').innerHTML=h;
@@ -373,51 +376,102 @@ $('tabs').addEventListener('click',function(e){
 });
 
 $('cards').addEventListener('click',function(e){
-  var b=e.target.closest('.counter-btn');if(!b)return;
-  var id=b.getAttribute('data-i'),type=b.getAttribute('data-t'),dir=b.getAttribute('data-d');
-  if(dir==='up')values[id][type]++;else values[id][type]=Math.max(0,values[id][type]-1);
-  var el=$('v-'+id+'-'+type);if(el)el.textContent=values[id][type];
+  // +/- buttons
+  var b=e.target.closest('.counter-btn');
+  if(b){
+    var id=b.getAttribute('data-i'),type=b.getAttribute('data-t'),dir=b.getAttribute('data-d');
+    if(dir==='up')values[id][type]++;else values[id][type]=Math.max(0,values[id][type]-1);
+    var el=$('v-'+id+'-'+type);if(el)el.textContent=values[id][type];
+    return;
+  }
+  // Tap number to edit directly
+  var cv=e.target.closest('.counter-value');
+  if(cv){
+    var cid=cv.id; // v-{itemId}-{type}
+    var parts=cid.replace('v-','').split('-');
+    var tp=parts.pop(); // opened or unopened
+    var iid=parts.join('-'); // item id (may contain hyphens)
+    var cur=values[iid][tp];
+    var inp=document.createElement('input');
+    inp.type='text';inp.inputMode='numeric';inp.pattern='[0-9]*';
+    inp.className='counter-input';inp.value=cur;
+    inp.setAttribute('data-iid',iid);inp.setAttribute('data-tp',tp);inp.setAttribute('data-vid',cid);
+    cv.replaceWith(inp);
+    inp.focus();inp.select();
+    function commit(){
+      var val=parseInt(inp.value)||0;if(val<0)val=0;
+      values[iid][tp]=val;
+      var span=document.createElement('span');
+      span.className='counter-value';span.id=cid;span.textContent=val;
+      inp.replaceWith(span);
+    }
+    inp.addEventListener('blur',commit);
+    inp.addEventListener('keydown',function(ev){if(ev.key==='Enter'){ev.preventDefault();inp.blur()}});
+  }
 });
 
-/* ── Submit ── */
+/* ── Copy ── */
 $('submitBtn').addEventListener('click',function(){
-  $('smTitle').textContent='\u62C5\u5F53\u8005\u60C5\u5831\u3092\u5165\u529B';
+  $('smTitle').textContent='\u62C5\u5F53\u8005\u540D\u3092\u5165\u529B';
   $('smLblS').textContent='\u62C5\u5F53\u8005\u540D';
-  $('smLblC').textContent='\u30C0\u30D6\u30EB\u30C1\u30A7\u30C3\u30AF\u5E79\u90E8\u540D';
   $('smCancel').textContent='\u623B\u308B';
-  $('smConfirm').textContent='\u9001\u4FE1\u3059\u308B';
+  $('smConfirm').textContent='\u30B3\u30D4\u30FC';
   $('smStaff').value=localStorage.getItem('drinkcheck_staff')||'';
-  $('smChecker').value='';
   showModal('submitModal');
-  setTimeout(function(){($('smStaff').value?$('smChecker'):$('smStaff')).focus()},100);
+  setTimeout(function(){$('smStaff').focus()},100);
 });
 $('smCancel').addEventListener('click',function(){hideModal('submitModal')});
 $('submitModal').addEventListener('click',function(e){if(e.target===this)hideModal('submitModal')});
 
 $('smConfirm').addEventListener('click',function(){
-  var staff=$('smStaff').value.trim(),checker=$('smChecker').value.trim();
+  var staff=$('smStaff').value.trim();
   if(!staff){alert('\u62C5\u5F53\u8005\u540D\u3092\u5165\u529B\u3057\u3066\u304F\u3060\u3055\u3044');return}
-  if(!checker){alert('\u5E79\u90E8\u540D\u3092\u5165\u529B\u3057\u3066\u304F\u3060\u3055\u3044');return}
   localStorage.setItem('drinkcheck_staff',staff);
   hideModal('submitModal');
-  doSubmit(staff,checker);
+  doCopy(staff);
 });
 
-function doSubmit(staff,checker){
-  showSaving('\u9001\u4FE1\u4E2D...');
+function doCopy(staff){
   var now=new Date();
   var ds=now.getFullYear()+'/'+String(now.getMonth()+1).padStart(2,'0')+'/'+String(now.getDate()).padStart(2,'0');
   var memo=$('memo').value;
-  var wp={date:ds,staff:staff,checker:checker,items:values,memo:memo,allItems:items,categories:categories,suppliers:SUPPLIERS};
+  var txt='\uD83D\uDCCB \u5728\u5EAB\u30C1\u30A7\u30C3\u30AF\n\u65E5\u4ED8: '+ds+'\n\u62C5\u5F53: '+staff+'\n\n';
 
-  fetch(WORKER_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(wp)})
-  .then(function(r){return r.json()})
-  .then(function(res){
-    hideSaving();
-    if(res.ok){alert('\u9001\u4FE1\u5B8C\u4E86')}
-    else{alert('\u9001\u4FE1\u30A8\u30E9\u30FC')}
-  }).catch(function(e){
-    hideSaving();alert('\u9001\u4FE1\u30A8\u30E9\u30FC: '+e.message);
+  // Group by supplier
+  var supNames={};SUPPLIERS.forEach(function(s){supNames[s.id]=s.name});
+  var groups={};
+  items.forEach(function(item){
+    var sid=item.supplier||'other';
+    if(!groups[sid])groups[sid]=[];
+    groups[sid].push(item);
+  });
+
+  Object.keys(groups).forEach(function(sid){
+    txt+='\u3010'+( supNames[sid]||sid)+'\u3011\n';
+    groups[sid].forEach(function(item){
+      var v=values[item.id];if(!v)return;
+      var hasCustom=item.units&&item.units.length>=2;
+      if(hasCustom){
+        var total=v.opened+v.unopened;
+        var warn=total<(item.parLevel||0)?' \u26A0\uFE0F':'';
+        txt+='\u30FB'+item.name+': '+item.units[0]+v.opened+' / '+item.units[1]+v.unopened+warn+'\n';
+      }else{
+        var warn2=v.unopened<(item.parLevel||0)?' \u26A0\uFE0F':'';
+        txt+='\u30FB'+item.name+': '+v.unopened+warn2+'\n';
+      }
+    });
+    txt+='\n';
+  });
+
+  if(memo)txt+='\uD83D\uDCDD \u30E1\u30E2: '+memo+'\n';
+
+  navigator.clipboard.writeText(txt).then(function(){
+    alert('\u30B3\u30D4\u30FC\u3057\u307E\u3057\u305F');
+  }).catch(function(){
+    // Fallback
+    var ta=document.createElement('textarea');ta.value=txt;ta.style.position='fixed';ta.style.opacity='0';
+    document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);
+    alert('\u30B3\u30D4\u30FC\u3057\u307E\u3057\u305F');
   });
 }
 
@@ -485,10 +539,13 @@ function renderAdminItems(){
   categories.forEach(function(cat){
     var ci=items.filter(function(x){return x.categoryId===cat.id}).sort(function(a,b){return(a.order||0)-(b.order||0)});
     h+='<div class="category-label">'+cat.name+'</div><div class="admin-list">';
-    ci.forEach(function(item){
+    ci.forEach(function(item,idx){
       var ps=item.image?'background-image:url('+item.image+')':'background:'+itemColor(item);
       var ini=item.image?'':item.name.charAt(0);
-      h+='<div class="admin-item"><div class="admin-item-photo" style="'+ps+'">'+ini+'</div><div class="admin-item-info"><div class="admin-item-name">'+item.name+'</div><div class="admin-item-meta">'+supName(item.supplier)+' / \u57FA\u6E96'+item.parLevel+'</div></div><div class="admin-item-actions"><button class="admin-action-btn edit" data-iedit="'+item.id+'">\u7DE8\u96C6</button><button class="admin-action-btn delete" data-idel="'+item.id+'">\u524A\u9664</button></div></div>';
+      var arrows='';
+      if(idx>0)arrows+='<button class="admin-action-btn edit" data-imv="'+item.id+'" data-dir="up">\u2191</button>';
+      if(idx<ci.length-1)arrows+='<button class="admin-action-btn edit" data-imv="'+item.id+'" data-dir="down">\u2193</button>';
+      h+='<div class="admin-item"><div class="admin-item-photo" style="'+ps+'">'+ini+'</div><div class="admin-item-info"><div class="admin-item-name">'+item.name+'</div><div class="admin-item-meta">'+supName(item.supplier)+' / \u57FA\u6E96'+item.parLevel+'</div></div><div class="admin-item-actions">'+arrows+'<button class="admin-action-btn edit" data-iedit="'+item.id+'">\u7DE8\u96C6</button><button class="admin-action-btn delete" data-idel="'+item.id+'">\u524A\u9664</button></div></div>';
     });
     h+='</div><button class="admin-add-btn" data-iadd="'+cat.id+'">+ \u54C1\u76EE\u8FFD\u52A0</button>';
   });
@@ -534,6 +591,18 @@ $('cmSave').addEventListener('click',function(){
 /* ── Item actions ── */
 $('adminItemSec').addEventListener('click',function(e){
   if(!getPat()){alert('PAT\u3092\u5148\u306B\u8A2D\u5B9A\u3057\u3066\u304F\u3060\u3055\u3044');return}
+  var mv=e.target.closest('[data-imv]');
+  if(mv){
+    var mid=mv.getAttribute('data-imv'),dir=mv.getAttribute('data-dir');
+    var item=items.filter(function(x){return x.id===mid})[0];if(!item)return;
+    var ci=items.filter(function(x){return x.categoryId===item.categoryId}).sort(function(a,b){return(a.order||0)-(b.order||0)});
+    var idx=-1;for(var i=0;i<ci.length;i++){if(ci[i].id===mid){idx=i;break}}
+    var sw=dir==='up'?idx-1:idx+1;if(sw<0||sw>=ci.length)return;
+    var tmpOrd=ci[idx].order;ci[idx].order=ci[sw].order;ci[sw].order=tmpOrd;
+    showSaving('\u4FDD\u5B58\u4E2D...');
+    ghWrite('data/items.json',JSON.stringify(items,null,2),'reorder items').then(function(){hideSaving();renderAdminItems()}).catch(function(err){hideSaving();alert(err.message)});
+    return;
+  }
   var edit=e.target.closest('[data-iedit]');
   if(edit){var item=items.filter(function(x){return x.id===edit.getAttribute('data-iedit')})[0];if(item)openItemModal(item);return}
   var del=e.target.closest('[data-idel]');
@@ -604,7 +673,7 @@ $('imSave').addEventListener('click',function(){
 /* ── Online ── */
 function checkOnline(){
   $('offlineBanner').textContent='Wi-Fi\u306E\u3042\u308B\u3068\u3053\u308D\u3067\u64CD\u4F5C\u3057\u3066\u304F\u3060\u3055\u3044';
-  function u(){if(navigator.onLine){$('offlineBanner').classList.remove('show');$('submitBtn').disabled=false}else{$('offlineBanner').classList.add('show');$('submitBtn').disabled=true}}
+  function u(){if(navigator.onLine){$('offlineBanner').classList.remove('show')}else{$('offlineBanner').classList.add('show')}}
   window.addEventListener('online',u);window.addEventListener('offline',u);u();
 }
 
