@@ -196,6 +196,24 @@ button{cursor:pointer}
 .loading{position:absolute;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;color:var(--sub);font-weight:700;background:var(--bg)}
 .offline{flex-shrink:0;background:var(--zero);color:#fff;text-align:center;font-size:13px;font-weight:700;padding:8px}
 .saving{position:absolute;inset:0;z-index:70;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;font-weight:900}
+/* tutorial: first-run overlay, TikTok-style swipe hint */
+.tut{position:absolute;inset:0;z-index:40;background:rgba(6,6,8,.9);display:flex;flex-direction:column;align-items:center;padding:28px 20px calc(20px + env(safe-area-inset-bottom));text-align:center;touch-action:none}
+.tut-swipe{flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px}
+.tut-stage{position:relative;width:120px;height:200px}
+.tut-trail{position:absolute;left:50%;bottom:30px;width:6px;margin-left:-3px;height:140px;border-radius:3px;background:linear-gradient(to top,rgba(61,224,255,0),var(--accent));transform-origin:bottom;animation:tutTrail 1.6s ease-in-out infinite}
+.tut-hand{position:absolute;left:50%;bottom:0;width:84px;height:84px;margin-left:-30px;animation:tutHand 1.6s ease-in-out infinite}
+@keyframes tutHand{0%{transform:translateY(0);opacity:0}15%{opacity:1}70%{transform:translateY(-120px);opacity:1}100%{transform:translateY(-120px);opacity:0}}
+@keyframes tutTrail{0%,10%{transform:scaleY(0);opacity:0}70%{transform:scaleY(1);opacity:1}100%{transform:scaleY(1);opacity:0}}
+.tut-big{font-family:var(--display);font-size:34px;line-height:1.25;letter-spacing:-.5px}
+.tut-big em{font-style:normal;color:var(--accent)}
+.tut-sub{font-size:14px;font-weight:700;color:var(--sub)}
+.tut-list{width:100%;display:flex;flex-direction:column;gap:8px;margin:8px 0 16px}
+.tut-row{display:flex;align-items:center;gap:12px;background:var(--surface);border-radius:16px;padding:10px 14px;text-align:left}
+.tut-ic{width:40px;height:40px;flex-shrink:0;border-radius:50%;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900}
+.tut-row b{display:block;font-size:15px}
+.tut-row span{font-size:12px;color:var(--sub);font-weight:500}
+.tut .primary{width:100%}
+@media (prefers-reduced-motion:reduce){.tut-hand,.tut-trail{animation:none}.tut-hand{transform:translateY(-60px)}}
 </style>
 </head>
 <body>
@@ -218,6 +236,23 @@ button{cursor:pointer}
   </header>
   <main class="reel noscroll" id="reel"></main>
 
+  <div class="tut" id="tut" role="dialog" aria-label="使い方" hidden>
+    <div class="tut-swipe">
+      <div class="tut-stage" aria-hidden="true">
+        <div class="tut-trail"></div>
+        <svg class="tut-hand" viewBox="0 0 64 64" fill="#17171B" stroke="#F5F5F7" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M24 34V10a5 5 0 0 1 10 0v18l0-4a5 5 0 0 1 10 0v6a5 5 0 0 1 10 0v10c0 12-8 20-19 20h-3c-6 0-11-3-14-8l-8-12a5 5 0 0 1 8-6z"/></svg>
+      </div>
+      <div class="tut-big">上にスワイプで<br><em>次の品目へ</em></div>
+      <div class="tut-sub">下にスワイプで前の品目にもどれます</div>
+    </div>
+    <div class="tut-list">
+      <div class="tut-row"><div class="tut-ic" aria-hidden="true"><svg width="16" height="24" viewBox="0 0 16 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M5 1h6v4c3 2 4 4 4 7v10H1V12c0-3 1-5 4-7z"/><path d="M1 15h14" /></svg></div><div><b>ボトルを触って残量</b><span>開けているボトルの残りを入れます</span></div></div>
+      <div class="tut-row"><div class="tut-ic" aria-hidden="true">±</div><div><b>＋−で未開封の本数</b><span>空欄から＋で1、−で0になります</span></div></div>
+      <div class="tut-row"><div class="tut-ic" aria-hidden="true" style="color:var(--accent)">✓</div><div><b>全部入れたらOK</b><span>記入済みになると押せます</span></div></div>
+    </div>
+    <button class="primary" id="tutStart">はじめる</button>
+  </div>
+
   <div class="overlay" id="settings" hidden>
     <div class="sheet" role="dialog" aria-label="設定">
       <div class="grab"></div>
@@ -229,6 +264,7 @@ button{cursor:pointer}
           <button id="handR" aria-pressed="true">右手</button>
         </div>
       </div>
+      <button class="adminLink" id="tutAgain"><span>使い方を見る</span><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3l5 5-5 5"/></svg></button>
       <button class="adminLink" id="toAdmin"><span>管理画面（品目の追加・削除）</span><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3l5 5-5 5"/></svg></button>
       <button class="danger" id="resetBtn">入力をリセット</button>
       <button class="ghost" id="closeSettings">閉じる</button>
@@ -805,10 +841,21 @@ $('outCopy').addEventListener('click',function(){
   }catch(err){hint.textContent='この画面ではコピーできません。画像を長押しで保存してください'}
 });
 
+/* tutorial */
+var TUT_KEY='drinkcheck_tut';
+function showTut(){$('tut').hidden=false}
+function closeTut(){$('tut').hidden=true;try{localStorage.setItem(TUT_KEY,'1')}catch(e){}}
+$('tutStart').addEventListener('click',closeTut);
+$('tutAgain').addEventListener('click',function(){$('closeSettings').click();showTut()});
+(function(){var y0=null;var t=$('tut');
+  t.addEventListener('touchstart',function(e){y0=e.touches[0].clientY},{passive:true});
+  t.addEventListener('touchend',function(e){if(y0!=null&&y0-e.changedTouches[0].clientY>60)closeTut();y0=null});
+})();
+
 /* init */
 function checkOnline(){function u(){$('offline').hidden=navigator.onLine}window.addEventListener('online',u);window.addEventListener('offline',u);u()}
 checkOnline();applyHand();
-loadAll().then(function(){$('loading').hidden=true;renderReel();setSlideH()})
+loadAll().then(function(){$('loading').hidden=true;renderReel();setSlideH();var seen=false;try{seen=!!localStorage.getItem(TUT_KEY)}catch(e){}if(!seen)showTut()})
   .catch(function(err){console.error(err);$('loadingText').textContent='読み込みに失敗しました。ページを再読み込みしてください'});
 window.addEventListener('resize',function(){var i=curIdx;setSlideH();goTo(i,false)});
 })();
